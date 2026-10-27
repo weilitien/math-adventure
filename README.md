@@ -65,3 +65,11 @@ npm run build
 - 3D 引擎按需載入；若裝置不支援 WebGL 或繪圖環境失效，保留一般關卡選擇與出發按鈕，仍可玩所有題型。
 - 實作：`src/IslandEntrance.tsx`（入口與替代介面）、`src/islandScene.ts`（場景與互動）、`src/island.css`（版面）。
 - 驗證：92 項既有邏輯測試與 TypeScript／正式建置通過；3D 視覺、光線、點選與 iPad 手勢尚未經實機瀏覽器驗證。Three.js 動態載入檔案約 136 KB gzip；建置仍會提示其原始壓縮大小超過 500 KB。
+
+## 線上遊玩與自動部署
+
+遊戲網址：https://weilitien.github.io/math-adventure/
+
+推送到 `main` 後，GitHub Actions 會安裝依賴、執行全部測試、建置，再部署到 GitHub Pages。部署進度可在儲存庫的 Actions 頁面查看；測試或建置失敗時不會覆蓋線上版本。
+
+`vite.config.ts` 將正式建置的資源路徑設為 `/math-adventure/`，本機開發仍使用 `/`。若更改儲存庫名稱或改用其他網址部署，需同步調整 `base`。線上進度儲存在各裝置的瀏覽器，本機開發站的紀錄不會自動轉移到線上站。
