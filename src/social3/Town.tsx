@@ -1,0 +1,30 @@
+import {useEffect,useRef,useState} from 'react';
+import {advance,completed,decorate,stories,type TownState} from './townLogic';
+import './town.css';
+function Classroom({town}:{town:TownState}){
+ const color=(id:string)=>town.decor[id]==='sea'?'#72aebd':'#efb65b';
+ return <svg className="town-room" viewBox="0 0 640 340" role="img" aria-label={`我的教室，已擺放 ${Object.keys(town.decor).length} 件裝飾`}>
+ <path d="M20 20H620V250H20Z" fill="#fff2dc"/><path d="M20 250H620L640 330H0Z" fill="#ddba94"/>
+ <rect x="230" y="50" width="210" height="115" rx="8" fill="#426d60"/><text x="335" y="100" textAnchor="middle" fill="white" fontSize="22">一起讓生活更美好</text><text x="335" y="140" textAnchor="middle" fill="#f6dc8b" fontSize="18">傾聽 · 合作 · 尊重</text>
+ <rect x="55" y="65" width="110" height="105" rx="8" fill="#a6d6e2" stroke="#d8ad75" strokeWidth="8"/><path d="M110 65V170M55 117H165" stroke="white" strokeWidth="5"/>
+ {town.decor.library&&<ellipse cx="320" cy="282" rx="130" ry="30" fill={color('library')}/>}
+ <rect x="465" y="164" width="120" height="85" rx="5" fill="#b58459"/><path d="M470 205H580" stroke="#f8e5ca" strokeWidth="5"/>
+ {(completed(town,'library')?[0,1,2,3,4,5]:[0,2,5]).map((n,i)=><rect key={n} x={475+n*16} y={completed(town,'library')?175:178+i*8} width="12" height="25" rx="2" fill={['#7eabb8','#e6b756','#d58173'][i%3]} transform={completed(town,'library')?'':`rotate(${i*12-15} ${480+n*16} 195)`}/>)}
+ {town.decor.meeting&&<g><path d="M180 28Q370 85 570 28" fill="none" stroke="#9b7856" strokeWidth="3"/>{[210,270,330,390,450,510].map((x,i)=><path key={x} d={`M${x} ${40+Math.sin(i/5*Math.PI)*13}l25 2-12 27z`} fill={i%2?color('meeting'):'#d98273'}/>)}</g>}
+ {town.decor.home&&<g><path d="M98 165V133" stroke="#608257" strokeWidth="4"/><ellipse cx="87" cy="145" rx="14" ry="6" fill="#7a9c65"/><circle cx="99" cy="129" r="12" fill={color('home')}/><circle cx="99" cy="129" r="4" fill="#fff3c5"/><path d="M80 156H118L112 178H86Z" fill="#c67e64"/></g>}
+ {town.decor.park&&<g><rect x="477" y="80" width="85" height="62" rx="8" fill={color('park')}/><text x="520" y="120" textAnchor="middle" fontSize="27" fill="#fff">♡ 友善</text></g>}
+ <text x="170" y="255" fontSize="48">🦌</text><text x="375" y="255" fontSize="48">🐻</text>
+ </svg>;
+}
+export function Town({town,selected,save}:{town:TownState;selected:number[];save:(t:TownState)=>void}){
+ const storyHeading=useRef<HTMLHeadingElement>(null);
+ const [active,setActive]=useState<string|null>(null),[response,setResponse]=useState<{text:string;ok:boolean}|null>(null),[choice,setChoice]=useState<number|null>(null),[replay,setReplay]=useState(false),[replayStep,setReplayStep]=useState(0);
+ useEffect(()=>{if(active){storyHeading.current?.focus({preventScroll:true});storyHeading.current?.scrollIntoView({block:'start',behavior:'auto'})}},[active]);
+ const story=stories.find(s=>s.id===active),index=story?(replay?replayStep:town.steps[story.id]??0):0,step=story?.steps[index];
+ const open=(id:string)=>{setActive(id);setResponse(null);setChoice(null);setReplay(false);setReplayStep(0)};
+ const total=stories.filter(s=>completed(town,s.id)).length;
+ return <section className="town"><div className="town-heading"><div><p className="eyebrow">OUR LITTLE TOWN</p><h2>歡迎來到好朋友小鎮</h2><p>幫朋友解決小問題，讓我們的教室一點一點變漂亮。</p></div><span className="town-stamp">💌 {total} / 4 個友善任務</span></div>
+ <div className="town-map" aria-label="小鎮任務地圖"><span className="town-cloud" aria-hidden="true">☁</span><div className="town-path" aria-hidden="true"/>{stories.map(s=><button className={`town-place town-place-${s.unit}`} key={s.id} disabled={!selected.includes(s.unit)} onClick={()=>open(s.id)}><span className="town-building" aria-hidden="true">{s.icon}</span><strong>{s.place}</strong><small>{!selected.includes(s.unit)?'先勾選對應主題':completed(town,s.id)?'✓ 已完成 · 可以重溫':`${town.steps[s.id]??0} / 3 · ${s.title}`}</small><span className="town-friend" aria-hidden="true">{s.avatar}</span></button>)}</div>
+ {story&&selected.includes(story.unit)&&<article className="town-story" aria-label={story.title}><div className="town-story-top"><h3 ref={storyHeading} tabIndex={-1}>{story.title}</h3><button onClick={()=>setActive(null)}>收起故事</button></div><p>{story.intro}</p>{step?<><div className="town-dialogue"><span className="town-avatar" aria-hidden="true">{story.avatar}</span><div><strong>{story.friend} · 第 {index+1} / 3 幕</strong><p>{step.line}</p></div></div><div className="town-choices">{step.choices.map((c,i)=>({c,i})).sort((a,b)=>(index+story.unit)%2?a.i-b.i:b.i-a.i).map(({c,i})=><button key={c.text} aria-pressed={choice===i} disabled={response?.ok} onClick={()=>{setChoice(i);setResponse({text:c.reply,ok:c.ok})}}>{c.text}</button>)}</div>{response&&<div role="status" className={`town-reply ${response.ok?'town-cheer':''}`}><strong>{response.ok?'✨ 朋友向你擊掌！':'💬 朋友想再跟你聊聊'}</strong><p>{response.text}</p>{response.ok?<button className="primary" onClick={()=>{if(replay)setReplayStep(n=>n+1);else if(choice!==null)save(advance(town,story.id,index,choice));setResponse(null);setChoice(null)}}>{index===2?'完成任務，看看成果':'繼續故事 →'}</button>:<p>可以再選一次，不扣星星。</p>}</div>}</>:<div className="town-ending" role="status"><span aria-hidden="true">{story.avatar} 🎉</span><h3>謝謝你，好朋友！</h3><p>{story.ending}</p><p>已解鎖：{story.reward}。到下方選顏色，就能放進教室！</p><button onClick={()=>{setReplay(true);setReplayStep(0);setResponse(null);setChoice(null)}}>再聽一次故事</button></div>}<small>每完成一幕就會保存；任務獎勵不計入測驗分數，重溫不重複增加獎勵。</small></article>}
+ <div className="town-classroom"><div><p className="eyebrow">MADE BY US</p><h3>我們的教室</h3><p>完成圖書館任務，書架會變整齊。再挑選喜歡的裝飾，不用花星星。</p><Classroom town={town}/></div><div className="town-decor">{stories.map(s=><fieldset key={s.id} disabled={!completed(town,s.id)}><legend>{s.icon} {s.reward}</legend>{!completed(town,s.id)?<p>完成「{s.title}」解鎖</p>:<div>{[['sun','暖陽色'],['sea','海洋色'],['none','收起']].map(([value,label])=><button key={value} aria-pressed={(town.decor[s.id]??'none')===value} onClick={()=>save(decorate(town,s.id,value))}>{label}</button>)}</div>}</fieldset>)}</div></div></section>;
+}
