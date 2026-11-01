@@ -1,17 +1,19 @@
 export const units = [
-  {name:'多位小數與加減', icon:'🔎', desc:'看懂位值、比較大小、對齊小數點', topics:['place','decimalCompare','decimalAdd','decimalSubtract','round','decimalStory']},
-  {name:'因數與公因數', icon:'🧩', desc:'找出因數，解開平均分裝的任務', topics:['factors','gcd','packing']},
-  {name:'倍數與公倍數', icon:'🚂', desc:'找規律，算出下一次相遇的時刻', topics:['multiple','divisibility','lcm','meeting']},
-  {name:'擴分、約分與通分', icon:'🍰', desc:'用不同寫法，認識一樣大的分數', topics:['expand','reduce','fractionCompare','quotient','commonDenominator']},
-  {name:'多邊形與扇形', icon:'📐', desc:'選讀：邊長、內角和、扇形與圓心角', topics:['polygon','triangle','triangleAngle','quadAngle','sector']},
+  {name:'多位小數與加減', icon:'🔎', desc:'看懂位值、比較大小、對齊小數點', topics:['place','decimalCompare','decimalAdd','decimalSubtract','round','decimalStory','decimalReceipt','decimalMissing']},
+  {name:'因數與公因數', icon:'🧩', desc:'找出因數，解開平均分裝的任務', topics:['factors','gcd','packing','squareTiles','packContents']},
+  {name:'倍數與公倍數', icon:'🚂', desc:'找規律，算出下一次相遇的時刻', topics:['multiple','divisibility','lcm','meeting','schedule']},
+  {name:'擴分、約分與通分', icon:'🍰', desc:'用不同寫法，認識一樣大的分數', topics:['expand','reduce','fractionCompare','quotient','commonDenominator','fractionFill','fractionServing']},
+  {name:'多邊形與扇形', icon:'📐', desc:'選讀：邊長、內角和、扇形與圓心角', topics:['polygon','triangle','triangleAngle','quadAngle','sector','sectorRemaining']},
 ];
+export const extensionTopics=['decimalReceipt','decimalMissing','squareTiles','packContents','schedule','fractionFill','fractionServing','sectorRemaining'];
 export const topicNames:Record<string,string> = {
+ decimalReceipt:'購物明細與找零',decimalMissing:'小數逆推生活題',squareTiles:'正方形切割',packContents:'分裝後的每包數量',schedule:'時刻表與同時發車',fractionFill:'等值分數填空',fractionServing:'等分圖與擴分',sectorRemaining:'剩餘扇形圓心角',
  place:'小數位值',decimalCompare:'小數大小',decimalAdd:'小數加法',decimalSubtract:'小數減法',round:'小數取概數',decimalStory:'小數生活題',
  factors:'找出所有因數',gcd:'最大公因數',packing:'平均分裝',multiple:'倍數',divisibility:'辨認倍數',lcm:'最小公倍數',meeting:'同時發生的問題',
  expand:'擴分',reduce:'約成最簡分數',fractionCompare:'異分母分數大小',quotient:'用分數表示除法',commonDenominator:'通分',
  polygon:'多邊形',triangle:'三角形邊長',triangleAngle:'三角形內角',quadAngle:'四邊形內角',sector:'扇形圓心角',
 };
-export type Question = {id:string;topic:string;unit:number;prompt:string;kind:'number'|'choice'|'list'|'fraction';answer:string;options?:string[];hints:[string,string];steps:string[];data:number[];visual?:'place'|'fraction'|'triangle'|'quad'|'sector';reduced?:boolean};
+export type Question = {id:string;topic:string;unit:number;prompt:string;kind:'number'|'choice'|'list'|'fraction';answer:string;options?:string[];hints:[string,string];steps:string[];data:number[];visual?:'place'|'fraction'|'triangle'|'quad'|'sector'|'receipt'|'tilePlan'|'schedule';reduced?:boolean};
 export function gcd(a:number,b:number):number {while(b){[a,b]=[b,a%b]}return a}
 export const lcm=(a:number,b:number)=>a/gcd(a,b)*b;
 export const factors=(n:number)=>Array.from({length:n},(_,i)=>i+1).filter(i=>n%i===0);
@@ -44,6 +46,15 @@ export function generate(topic:string,rng:()=>number=Math.random):Question {
  let prompt='',answer='',kind:Question['kind']='number',options:string[]|undefined,data:number[]=[],visual:Question['visual'],reduced=false;
  let hints:Question['hints']=['先圈出題目提供的數字，想想要求的是什麼。','把已知條件分成小步驟，再一步一步計算。'],steps:string[]=[];
  switch(topic){
+  case 'decimalReceipt':{const a=r(100,9000),b=r(100,9000),paid=Math.ceil((a+b)/1000)*1000+r(1,5)*1000;data=[a,b,paid];prompt=`依購物明細，付出 ${decimal(paid,2)} 元，應找回多少元？`;answer=decimal(paid-a-b,2);visual='receipt';hints=['先把兩項商品價格相加，求總價。','付出的金額減去總價，就是找零；小數點要對齊。'];steps=[`總價：${decimal(a,2)}＋${decimal(b,2)}＝${decimal(a+b,2)} 元。`,`找零：${decimal(paid,2)}－${decimal(a+b,2)}＝${answer} 元。`];break}
+  case 'decimalMissing':{const before=r(1000,50000),used=r(1,before-1),after=r(1000,50000),added=after+used;data=[before,used,added];prompt=`水桶原有 ${decimal(before)} 公升水，用掉 ${decimal(used)} 公升後，又加入一些水，現在有 ${decimal(before-used+added)} 公升。又加入多少公升？`;answer=decimal(added);hints=['先求用水後還剩多少公升。','現在的水量減去用水後剩下的水量，就是加入的量。'];steps=[`用水後剩下：${decimal(before)}－${decimal(used)}＝${decimal(before-used)} 公升。`,`加入：${decimal(before-used+added)}－${decimal(before-used)}＝${answer} 公升。`];break}
+  case 'squareTiles':{const scale=r(2,8),a=scale*r(2,12),b=scale*r(2,12);data=[a,b];prompt=`長 ${a} 公分、寬 ${b} 公分的長方形紙板，要切成一樣大的正方形，不剩下紙板、不拼接，邊沿原紙板長寬方向。正方形邊長最大是幾公分？`;answer=String(gcd(a,b));visual='tilePlan';hints=['正方形邊長要同時整除長和寬。','找出長和寬的最大公因數，不是最小公倍數。'];steps=[`${a} 的因數：${factors(a).join('、')}。`,`${b} 的因數：${factors(b).join('、')}。`,`最大的共同因數是 ${answer}，所以邊長最大 ${answer} 公分。`];break}
+  case 'packContents':{const g=r(2,9),a=g*r(2,12),b=g*r(2,12);data=[a,b];prompt=`有 ${a} 顆糖和 ${b} 塊餅乾，全部平均分成最多個相同禮物包。每包糖的數量相同，餅乾數量也相同。每包有幾顆糖？`;answer=String(a/gcd(a,b));hints=['先用最大公因數求最多能分成幾包。','題目問的是每包的糖，還要用糖的總數除以包數。'];steps=[`最多包數：${a} 和 ${b} 的最大公因數＝${gcd(a,b)}。`,`每包糖：${a}÷${gcd(a,b)}＝${answer} 顆。`];break}
+  case 'schedule':{const a=r(3,15),b=r(3,15),times=r(2,5),duration=lcm(a,b)*times;data=[a,b,duration];prompt=`兩班接駁車現在同時發車，甲每 ${a} 分鐘一班、乙每 ${b} 分鐘一班。接下來 ${duration} 分鐘內（含最後一分鐘，不含現在），會再同時發車幾次？`;answer=String(times);visual='schedule';hints=['先找兩種間隔的最小公倍數，求再次同時發車的間隔。','總時間除以同時發車間隔；不把現在這一次算進去。'];steps=[`每 ${lcm(a,b)} 分鐘同時發車一次。`,`時刻（從現在起算）：${Array.from({length:times},(_,i)=>(i+1)*lcm(a,b)).join('、')} 分鐘。`,`共 ${duration}÷${lcm(a,b)}＝${answer} 次。`];break}
+  case 'fractionFill':{const d=r(3,15),n=r(1,d-1),k=r(2,8);data=[n,d,k];prompt=`${n}/${d}＝${n*k}/□。空格的分母是多少？`;answer=String(d*k);visual='fraction';hints=['先看分子乘了幾倍。','分子和分母要同乘一個數，分數大小才不變。'];steps=[`分子 ${n*k}÷${n}＝${k}。`,`分母 ${d}×${k}＝${answer}。`];break}
+  case 'fractionServing':{const d=r(3,12),n=r(1,d-1),k=r(2,6);data=[n,d,k];prompt=`一張紙的 ${n}/${d} 已塗色。如果改成平均分成 ${d*k} 小格，保持塗色面積不變，應塗幾小格？`;answer=String(n*k);visual='fraction';hints=['先看每一大份又分成幾小格。','每份分成的格數乘原來塗色份數，就是新塗色格數。'];steps=[`每大份分成 ${d*k}÷${d}＝${k} 小格。`,`塗色 ${n}×${k}＝${answer} 小格。`,`${n}/${d}＝${answer}/${d*k}。`];break}
+  case 'sectorRemaining':{const d=[3,4,5,6,8,9,10,12][r(0,7)],n=r(1,d-1);data=[n,d];prompt=`一個圓平均分成 ${d} 等份，連續的 ${n} 份塗色。剩下未塗色部分的圓心角是幾度？`;answer=String(360/d*(d-n));visual='sector';hints=['圖中的顏色表示已塗色，題目要的是剩下的部分。','先求剩下幾份，再乘每份的圓心角。'];steps=[`未塗色 ${d}－${n}＝${d-n} 份。`,`每份 ${360}÷${d}＝${360/d}°。`,`剩下部分圓心角 ${360/d}×${d-n}＝${answer}°。`];break}
+
   case 'place':{const n=r(10001,999999),p=r(1,3),digits=decimal(n);data=[n,p];prompt=`${digits} 的${['','十分','百分','千分'][p]}位數字是多少？`;answer=String(Math.floor(n/10**(3-p))%10);visual='place';hints=['小數點右邊第一位是十分位。',`從小數點往右數第 ${p} 個位置，不要跳過 0。`];steps=[`小數點右邊依序是十分位、百分位、千分位。`,`${digits} 的${['','十分','百分','千分'][p]}位數字是 ${answer}。`];break}
   case 'decimalCompare':{const a=r(1,99999),b=r(0,3)===0?a:r(1,99999);data=[a,b];prompt=`${decimal(a)} □ ${decimal(b)}，選出正確符號。`;answer=a>b?'>':a<b?'<':'=';kind='choice';options=['>','<','='];hints=['先比較整數部分，再依序比較十分位、百分位、千分位。','把小數點對齊；從左到右找到第一個不一樣的位數。'];steps=[`${decimal(a)} 有 ${a} 個 0.001；${decimal(b)} 有 ${b} 個 0.001。`,`${decimal(a)} ${answer} ${decimal(b)}`];break}
   case 'decimalAdd':case 'decimalSubtract':case 'decimalStory':{let a=r(1001,99999),b=r(101,99999);const add=topic==='decimalAdd';if(!add&&a<b)[a,b]=[b,a];data=[a,b,add?1:0];prompt=topic==='decimalStory'?`一條緞帶長 ${decimal(a)} 公尺，剪下 ${decimal(b)} 公尺後，還剩多少公尺？`:`${decimal(a)} ${add?'＋':'−'} ${decimal(b)} ＝？`;answer=decimal(add?a+b:a-b);hints=['小數點對齊，相同位值才能相加減。',`可以把兩個數都看成「幾個 0.001」，先算 ${a} ${add?'＋':'−'} ${b}，再換回小數。`];steps=[`將兩個數都乘以 1000：${a} 和 ${b}。`,`${a} ${add?'＋':'−'} ${b} = ${add?a+b:a-b}。`,`換回原來單位，答案是 ${answer}。`];break}

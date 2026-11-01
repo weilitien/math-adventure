@@ -9,6 +9,15 @@ const commonMultiple=(a:number,b:number)=>{for(let n=Math.max(a,b);n<=a*b;n++)if
 function independentlyVerify(q:Question){
  const [a,b,c,d,e]=q.data;let answer:string|undefined;
  switch(q.topic){
+ case 'decimalReceipt':answer=((c-a-b)/100).toFixed(2);assert.ok(c>a+b);break;
+ case 'decimalMissing':answer=(c/1000).toFixed(3);assert.ok(a>b);break;
+ case 'squareTiles':answer=String(divisor(a,b));break;
+ case 'packContents':answer=String(a/divisor(a,b));break;
+ case 'schedule':{let count=0;for(let minute=1;minute<=c;minute++)if(minute%a===0&&minute%b===0)count++;answer=String(count);break}
+ case 'fractionFill':answer=String(b*c);break;
+ case 'fractionServing':answer=String(a*c);break;
+ case 'sectorRemaining':answer=String(360-360*a/b);break;
+
  case 'place':answer=String(Math.floor(a/Math.pow(10,3-b))%10);break;
  case 'decimalCompare':answer=a>b?'>':a<b?'<':'=';break;
  case 'decimalAdd':case 'decimalSubtract':case 'decimalStory':answer=((c?a+b:a-b)/1000).toFixed(3);break;
@@ -47,3 +56,11 @@ test('Equivalent fractions work, simplest-fraction questions enforce reduction',
 test('All nonempty scope combinations only generate selected units',()=>{for(let mask=1;mask<32;mask++){const selected=units.map((_,i)=>i).filter(i=>mask&(1<<i));const qs=buildRound(selected,20,undefined,seeded(mask));assert.equal(qs.length,20);assert.equal(new Set(qs.map(q=>q.id)).size,20);assert.ok(qs.every(q=>selected.includes(q.unit)));assert.ok(selected.every(u=>qs.some(q=>q.unit===u)))}});
 test('Empty scope cannot start, default scope excludes optional geometry',()=>{assert.throws(()=>buildRound([],20));const p=empty();assert.deepEqual(p.selected,[0,1,2,3]);assert.ok(buildRound(p.selected).every(q=>q.unit!==4))});
 test('Progress preserves grades separately, round trips and resets safely',()=>{assert.notEqual(storageKey,grade3Key);const p=empty(),q=generate('reduce');p.attempts=[record(q,[q.answer],0),record(q,[q.answer],1),record(q,['wrong',q.answer],0)];p.mistakes=[q];p.passed=[0];assert.deepEqual(summarize(p.attempts),{count:3,first:1,hinted:1,corrected:1,stars:18});assert.deepEqual(parseProgress(JSON.stringify(p)),JSON.parse(JSON.stringify(p)));for(const raw of [null,'bad','{}',JSON.stringify({...p,mistakes:[{id:'bad'}]}),JSON.stringify({...p,attempts:[{}]})])assert.deepEqual(parseProgress(raw),empty());p.selected=[];assert.deepEqual(parseProgress(JSON.stringify(p)).selected,[])});
+
+test('Expanded topics survive save/load alongside old questions without resetting progress',()=>{
+ const p=empty(),old=generate('decimalAdd',seeded(8)),newQuestion=generate('squareTiles',seeded(9));p.attempts=[record(old,[old.answer],0),record(newQuestion,[newQuestion.answer],1)];p.mistakes=[newQuestion];p.passed=[0];assert.deepEqual(parseProgress(JSON.stringify(p)),JSON.parse(JSON.stringify(p)));assert.equal(storageKey,'math-adventure-grade5-progress-v1');
+});
+test('Extension questions carry visuals and valid unit membership',()=>{
+ for(const [topic,visual] of [['decimalReceipt','receipt'],['schedule','schedule'],['squareTiles','tilePlan'],['fractionFill','fraction'],['fractionServing','fraction'],['sectorRemaining','sector']]){const q=generate(topic,seeded(22));assert.equal(q.visual,visual);assert.ok(units[q.unit].topics.includes(topic));assert.ok(q.steps.length>=2)}
+ assert.equal(Object.keys(topicNames).length,31);
+});
