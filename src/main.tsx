@@ -10,6 +10,7 @@ import ScienceApp from './science3/App';
 import SocialApp from './social3/App';
 import ChineseApp from './chinese3/App';
 import HanlinApp from './hanlin3/App';
+import HanlinFiveApp from './hanlin5/App';
 import {resolveCourse,courseUrl,type Course} from './courseSelection';
 import './style.css';
 const levels=[{name:'數字探險島',icon:'🏝️',desc:'認識數字，發現位值的秘密',ids:[2,8,9,10,11]},{name:'大小比較森林',icon:'🌳',desc:'穿過森林，排出數字的順序',ids:[4,7,16]},{name:'加減規律列車',icon:'🚂',desc:'跟著規律，前進下一站',ids:[5,6,12]},{name:'金錢商店街',icon:'🏡',desc:'數一數、換一換，聰明買東西',ids:[1,3,13,14,15]},{name:'數字解謎城堡',icon:'🏰',desc:'收集線索，成為數字偵探',ids:[17,18,19,20]},{name:'數學大挑戰',icon:'🏆',desc:'準備好了嗎？挑戰全部能力',ids:ids.map((_,i)=>i+1)}];
@@ -37,10 +38,14 @@ function MathThreeCourse(){
  const [classic,setClassic]=useState(false);
  return <><div className="grade-switch" aria-label="三年級數學練習模式"><button aria-pressed={!classic} onClick={()=>{if(classic&&window.confirm('切換到翰林單元？已完成紀錄會保留。'))setClassic(false)}}>翰林版三上 · 九大單元</button><button aria-pressed={classic} onClick={()=>{if(!classic&&window.confirm('切換到原本數字冒險？已完成紀錄會保留。'))setClassic(true)}}>原本數字冒險與收藏</button><span>兩種模式紀錄分開保存</span></div>{classic?<App/>:<HanlinApp/>}</>;
 }
+function MathFiveCourse(){
+ const [legacy,setLegacy]=useState(false);
+ return <><div className="grade-switch" aria-label="五年級數學版本"><button aria-pressed={!legacy} onClick={()=>{if(legacy&&window.confirm('切換到翰林五上？已完成紀錄會保留。'))setLegacy(false)}}>翰林版 · 考試第 1～6 單元</button><button aria-pressed={legacy} onClick={()=>{if(!legacy&&window.confirm('切換到原康軒練習？已完成紀錄會保留。'))setLegacy(true)}}>原康軒練習與紀錄</button><span>兩個版本紀錄分開保存</span></div>{legacy?<GradeFiveApp/>:<HanlinFiveApp/>}</>;
+}
 function GradeRoot(){
  const [course,setCourse]=useState<Course>(()=>{let saved:string|null=null,legacy:string|null=null;try{saved=localStorage.getItem('math-adventure-selected-course');legacy=localStorage.getItem('math-adventure-selected-grade')}catch{}return resolveCourse(window.location.search,saved,legacy)});
- useEffect(()=>{document.title=course==='chinese3'?'國語小探險家｜康軒三年級上學期':course==='social3'?'社會小探險家｜翰林三年級上學期':course==='science3'?'自然小探險家｜康軒三年級上學期':course==='math5'?'數學冒險王｜康軒五年級上學期':'數學冒險王｜翰林版三年級上學期'},[course]);
+ useEffect(()=>{document.title=course==='chinese3'?'國語小探險家｜康軒三年級上學期':course==='social3'?'社會小探險家｜翰林三年級上學期':course==='science3'?'自然小探險家｜康軒三年級上學期':course==='math5'?'數學冒險王｜翰林版五年級上學期・第1～6單元':'數學冒險王｜翰林版三年級上學期'},[course]);
  const change=(next:Course)=>{if(next===course)return;if(!window.confirm('切換科目會離開目前頁面；已完成題目和學習紀錄會保留。'))return;setCourse(next);try{localStorage.setItem('math-adventure-selected-course',next);if(next==='math3'||next==='math5')localStorage.setItem('math-adventure-selected-grade',next==='math5'?'5':'3')}catch{}window.history.replaceState(null,'',courseUrl(window.location.href,next))};
- return <><div className="grade-switch" aria-label="選擇年級與科目"><strong>我的學習專區</strong><button aria-pressed={course==='math3'} onClick={()=>change('math3')}>三年級數學 · 翰林版</button><button aria-pressed={course==='math5'} onClick={()=>change('math5')}>五年級數學 · 康軒版</button><button aria-pressed={course==='science3'} onClick={()=>change('science3')}>三年級自然 · 康軒</button><button aria-pressed={course==='social3'} onClick={()=>change('social3')}>三年級社會 · 翰林</button><button aria-pressed={course==='chinese3'} onClick={()=>change('chinese3')}>三年級國語 · 康軒</button><span>各科紀錄分開保存</span></div>{course==='chinese3'?<ChineseApp/>:course==='social3'?<SocialApp/>:course==='science3'?<ScienceApp/>:course==='math5'?<GradeFiveApp/>:<MathThreeCourse/>}</>;
+ return <><div className="grade-switch" aria-label="選擇年級與科目"><strong>我的學習專區</strong><button aria-pressed={course==='math3'} onClick={()=>change('math3')}>三年級數學 · 翰林版</button><button aria-pressed={course==='math5'} onClick={()=>change('math5')}>五年級數學 · 翰林版</button><button aria-pressed={course==='science3'} onClick={()=>change('science3')}>三年級自然 · 康軒</button><button aria-pressed={course==='social3'} onClick={()=>change('social3')}>三年級社會 · 翰林</button><button aria-pressed={course==='chinese3'} onClick={()=>change('chinese3')}>三年級國語 · 康軒</button><span>各科紀錄分開保存</span></div>{course==='chinese3'?<ChineseApp/>:course==='social3'?<SocialApp/>:course==='science3'?<ScienceApp/>:course==='math5'?<MathFiveCourse/>:<MathThreeCourse/>}</>;
 }
 createRoot(document.getElementById('root')!).render(<GradeRoot/>);
